@@ -1,0 +1,596 @@
+<!doctype html>
+<html lang="uk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Каскад контрактів РМУ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --paper: #f6f4ef;
+  --card: #ffffff;
+  --ink: #1d2128;
+  --muted: #646b76;
+  --faint: #a3a9b2;
+  --rule: #dcd8cf;
+  --band-a: #ebe7de;
+  --band-b: #e2ddd2;
+  --lane1: #2f5fc4;
+  --lane2: #b0731a;
+  --lane3: #2c8058;
+  --checked-by: #c23c66;
+  --edge: #8d939c;
+  --done: #2c8058;
+  --shadow: 0 10px 30px rgba(20, 24, 30, .16);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #15171b; --card: #1f2228; --ink: #e7e9ec; --muted: #9aa1ab; --faint: #5d636c; --rule: #33373f;
+    --band-a: #23262c; --band-b: #2a2e35; --lane1: #7aa2ff; --lane2: #e0a24a; --lane3: #5fc391;
+    --checked-by: #ff7aa0; --edge: #6f7680; --done: #5fc391; --shadow: 0 10px 30px rgba(0, 0, 0, .5);
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #15171b; --card: #1f2228; --ink: #e7e9ec; --muted: #9aa1ab; --faint: #5d636c; --rule: #33373f;
+  --band-a: #23262c; --band-b: #2a2e35; --lane1: #7aa2ff; --lane2: #e0a24a; --lane3: #5fc391;
+  --checked-by: #ff7aa0; --edge: #6f7680; --done: #5fc391; --shadow: 0 10px 30px rgba(0, 0, 0, .5);
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--paper); color: var(--ink); font: 15px/1.5 "IBM Plex Sans", system-ui, sans-serif; }
+code { font: 13px "IBM Plex Mono", monospace; background: var(--band-a); padding: 0 4px; border-radius: 3px; }
+.wrap { padding: 0 clamp(16px, 2.5vw, 40px); }
+
+/* --- закріплена вкладка чек-листа: третина екрана */
+#panel {
+  position: sticky; top: 0; z-index: 5; height: 33.333vh; min-height: 230px;
+  display: flex; flex-direction: column; background: var(--card);
+  border-bottom: 1px solid var(--rule); box-shadow: 0 4px 18px rgba(20, 24, 30, .08);
+}
+.tabs { display: flex; align-items: flex-end; gap: 4px; padding-top: 8px; border-bottom: 1px solid var(--rule); background: var(--paper); }
+.tab { font: 600 13px "IBM Plex Sans", system-ui, sans-serif; padding: 7px 16px; border: 1px solid var(--rule); border-bottom: none; border-radius: 8px 8px 0 0; background: var(--card); color: var(--ink); margin-bottom: -1px; }
+.tabs .stamp { margin-left: auto; padding-bottom: 8px; }
+.phead { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; padding-top: 8px; padding-bottom: 6px; }
+.phead .kicker { font: 500 11.5px "IBM Plex Mono", monospace; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; width: 100%; }
+.phead h2 { margin: 0; font-size: 18px; font-weight: 600; }
+.phead .meta { color: var(--muted); font-size: 13px; }
+.phead .ctrl { margin-left: auto; display: flex; gap: 6px; align-items: center; }
+.btn, select { font: 500 13px "IBM Plex Sans", system-ui, sans-serif; color: var(--ink); background: var(--card); border: 1px solid var(--rule); border-radius: 7px; padding: 5px 10px; cursor: pointer; }
+.btn:hover, select:hover { border-color: var(--lane1); color: var(--lane1); }
+select { max-width: 280px; }
+.progress { font-size: 13px; color: var(--muted); }
+.progress b { color: var(--done); font-weight: 600; }
+.pbody { flex: 1; overflow: auto; padding-top: 2px; padding-bottom: 14px; display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 4px 28px; align-content: start; }
+.col h4 { margin: 8px 0 4px; font-size: 11.5px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-weight: 600; }
+.col h4.safety { color: var(--lane1); }
+.check { display: flex; gap: 9px; align-items: flex-start; padding: 4px 0; font-size: 14px; line-height: 1.45; cursor: pointer; }
+.check input { margin: 3px 0 0; width: 16px; height: 16px; flex: none; accent-color: var(--done); cursor: pointer; }
+.check.done > span { color: var(--muted); text-decoration: line-through; text-decoration-color: var(--faint); }
+.check .sub { display: block; color: var(--muted); font-size: 13px; margin-top: 2px; }
+.col blockquote { margin: 4px 0 2px; padding: 4px 10px; border-left: 3px solid var(--rule); color: var(--muted); font-size: 13px; }
+.col blockquote.msg { border-left-color: var(--lane1); color: var(--ink); background: var(--band-a); border-radius: 0 6px 6px 0; padding: 8px 12px; }
+.chips { margin: 2px 0 4px; display: flex; flex-wrap: wrap; gap: 4px; }
+.chip { font: 500 11.5px "IBM Plex Sans", system-ui, sans-serif; padding: 1px 8px; border-radius: 99px; border: 1px solid currentColor; }
+.chip.in { color: var(--lane1); }
+.chip.out { color: var(--checked-by); }
+.empty { color: var(--muted); font-size: 14px; max-width: 70ch; }
+.check.plan input { cursor: default; }
+.bar { height: 6px; border-radius: 3px; background: var(--band-b); overflow: hidden; margin: 2px 0 8px; max-width: 320px; }
+.bar i { display: block; height: 100%; background: var(--done); }
+.brow { display: flex; justify-content: space-between; max-width: 320px; font-size: 14px; }
+.updated { margin-left: auto; padding-bottom: 8px; font: 500 12px "IBM Plex Mono", monospace; color: var(--muted); }
+body.pub .int, body:not(.pub) .pubonly { display: none !important; }
+
+/* --- сторінка */
+header.top { padding-top: 22px; }
+h1 { font-size: 28px; font-weight: 600; margin: 0 0 6px; letter-spacing: -.01em; }
+.stamp { font: 500 12px "IBM Plex Mono", monospace; color: var(--checked-by); letter-spacing: .04em; text-transform: uppercase; }
+.lede { color: var(--muted); max-width: 80ch; margin: 0 0 16px; }
+.facts { display: flex; flex-wrap: wrap; gap: 6px 26px; margin: 0 0 16px; padding: 0; list-style: none; }
+.facts li { font-size: 14px; color: var(--muted); }
+.facts b { color: var(--ink); font-weight: 600; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 20px; font-size: 13px; color: var(--muted); margin-bottom: 10px; align-items: center; }
+.legend svg { vertical-align: middle; margin-right: 6px; }
+.toolbar { display: flex; gap: 12px; align-items: stretch; margin-bottom: 10px; }
+#goal { flex: 1; min-height: 46px; padding: 8px 14px; background: var(--card); border: 1px solid var(--rule); border-left: 4px solid var(--lane1); border-radius: 8px; font-size: 14px; display: none; align-items: center; }
+#goal.on { display: flex; }
+#goal .ph, #goal .meta { color: var(--muted); }
+#goal .meta { font-size: 12.5px; }
+#toggleTip { margin-left: auto; padding: 8px 14px; white-space: nowrap; }
+.stage-wrap { overflow-x: auto; background: var(--card); border: 1px solid var(--rule); border-radius: 10px; }
+#chart { display: block; min-width: 1100px; width: 100%; height: auto; }
+#chart text { font-family: "IBM Plex Sans", system-ui, sans-serif; fill: var(--ink); }
+#chart .mono { font-family: "IBM Plex Mono", monospace; }
+.dot { cursor: pointer; outline: none; }
+.dot circle.core { transition: r .12s; }
+.dot:hover circle.core, .dot:focus circle.core, .dot.active circle.core { r: 10; }
+.dot.selected circle.halo { stroke: var(--lane1); stroke-width: 2; stroke-dasharray: 3 3; }
+.dot:focus-visible circle.halo { stroke: var(--ink); stroke-width: 2; }
+.edge { fill: none; stroke: var(--edge); stroke-width: 1.2; opacity: .35; transition: opacity .15s, stroke .15s; }
+.edge.wide { opacity: .12; }
+.dim .edge { opacity: .06; }
+.dim .dot:not(.active):not(.rel) { opacity: .35; }
+.edge.in { stroke: var(--lane1); stroke-width: 2.2; opacity: 1; }
+.edge.out { stroke: var(--checked-by); stroke-width: 2.2; opacity: 1; }
+.hint { font-size: 13px; color: var(--muted); margin: 10px 2px 0; }
+footer { margin: 26px 0 40px; font-size: 13px; color: var(--muted); border-top: 1px solid var(--rule); padding-top: 12px; }
+
+/* --- контекстне вікно: близько десятої частини екрана */
+#tip {
+  position: fixed; z-index: 10; width: 30vw; min-width: 260px; max-width: calc(100vw - 32px); max-height: 33vh; overflow: auto;
+  background: var(--card); color: var(--ink); border: 1px solid var(--rule); border-radius: 10px;
+  box-shadow: var(--shadow); padding: 14px 16px 12px; font-size: 13.5px; line-height: 1.45;
+  opacity: 0; pointer-events: none; transform: translateY(4px); transition: opacity .12s, transform .12s;
+}
+#tip.on { opacity: 1; pointer-events: auto; transform: none; }
+#tip .kicker { font: 500 11.5px "IBM Plex Mono", monospace; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
+#tip h3 { margin: 2px 0 8px; font-size: 17px; font-weight: 600; }
+#tip dl { display: grid; grid-template-columns: auto 1fr; gap: 2px 10px; margin: 0 0 8px; }
+#tip dt { color: var(--muted); }
+#tip dd { margin: 0; }
+#tip h4 { margin: 10px 0 3px; font-size: 11.5px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-weight: 600; }
+#tip h4.safety { color: var(--lane1); }
+#tip ul { margin: 0; padding-left: 18px; }
+#tip li { margin: 2px 0; }
+#tip li ul { padding-left: 14px; color: var(--muted); }
+#tip blockquote { margin: 4px 0 2px; padding: 4px 10px; border-left: 3px solid var(--rule); color: var(--muted); font-size: 12.5px; }
+#tip blockquote.msg { border-left-color: var(--lane1); color: var(--ink); background: var(--band-a); border-radius: 0 6px 6px 0; }
+#tip .merge { margin: 6px 0 4px; padding: 6px 10px; background: var(--band-a); border-radius: 6px; font-size: 12.5px; }
+#tip .pin { float: right; font-size: 11px; color: var(--faint); }
+@media (max-width: 640px) {
+  .phead { gap: 4px 10px; padding-top: 6px; }
+  .phead h2 { font-size: 16px; }
+  .phead .meta { width: 100%; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .phead .ctrl { margin-left: 0; width: 100%; min-width: 0; }
+  .progress { display: none; }
+  select { flex: 1; min-width: 0; max-width: none; }
+  .pbody { grid-template-columns: minmax(0, 1fr); }
+  .toolbar { flex-direction: column; }
+  #toggleTip { margin-left: 0; }
+}
+</style>
+</head>
+<body>
+<section id="panel" aria-label="Чек-лист операції">
+  <div class="tabs wrap"><span class="tab" id="tabName">Чек-лист</span><span class="stamp int">Внутрішній документ Ради</span><span class="updated pubonly" id="updated"></span></div>
+  <div class="phead wrap">
+    <div class="kicker" id="pKicker"></div>
+    <h2 id="pTitle"></h2>
+    <span class="meta" id="pMeta"></span>
+    <div class="ctrl">
+      <span class="progress" id="pProgress"></span>
+      <button class="btn" id="pPrev" type="button" aria-label="Попередня операція">←</button>
+      <select id="pSelect" aria-label="Обрати операцію"></select>
+      <button class="btn" id="pNext" type="button" aria-label="Наступна операція">→</button>
+    </div>
+  </div>
+  <div class="pbody wrap" id="pBody"></div>
+</section>
+
+<main class="wrap">
+  <header class="top">
+    <h1>Каскад контрактів РМУ</h1>
+    <p class="lede int">Три ступені року, кожна поділена на сім етапів. Точка — операція: один контракт, одна людина. Клік по точці відкриває її чек-лист у вкладці вгорі; наведення показує коротку картку. Дуги показують підстраховку — хто чий матеріал перевіряє.</p>
+    <p class="lede pubonly">Три ступені року, кожна поділена на сім етапів. Точка — операція: один контракт, одна людина. Колір точки — стан виконання; клік відкриває стан операції у вкладці вгорі. Дуги показують підстраховку — хто чий матеріал перевіряє.</p>
+    <ul class="facts" id="facts"></ul>
+    <div class="legend">
+      <span><svg width="16" height="16"><circle cx="8" cy="8" r="6" fill="var(--lane1)"/></svg>операція першої ступені</span>
+      <span class="int"><svg width="18" height="18"><circle cx="9" cy="9" r="5" fill="var(--lane1)"/><circle cx="9" cy="9" r="8" fill="none" stroke="var(--lane1)" stroke-width="1.3"/></svg>злита операція</span>
+      <span><svg width="16" height="16"><circle cx="8" cy="8" r="5.5" fill="var(--card)" stroke="var(--lane1)" stroke-width="2"/></svg>не розпочато</span>
+      <span><svg width="18" height="18"><circle cx="9" cy="9" r="5" fill="var(--lane1)"/><path d="M9,2 A7,7 0 0 1 16,9" fill="none" stroke="var(--done)" stroke-width="2.4"/></svg>у роботі</span>
+      <span><svg width="16" height="16"><circle cx="8" cy="8" r="6" fill="var(--done)"/></svg>виконано</span>
+      <span><svg width="16" height="16"><circle cx="8" cy="8" r="5.5" fill="var(--card)" stroke="var(--lane2)" stroke-width="2" stroke-dasharray="3 2"/></svg>етап ще не розроблено</span>
+      <span><svg width="26" height="10"><line x1="1" y1="5" x2="25" y2="5" stroke="var(--lane1)" stroke-width="2.4"/></svg>що перевіряє ця операція</span>
+      <span><svg width="26" height="10"><line x1="1" y1="5" x2="25" y2="5" stroke="var(--checked-by)" stroke-width="2.4"/></svg>хто перевіряє її</span>
+    </div>
+  </header>
+  <div class="toolbar">
+    <div id="goal" aria-live="polite"></div>
+    <button class="btn" id="toggleTip" type="button">Прибрати контекстне вікно</button>
+  </div>
+  <div class="stage-wrap"><svg id="chart" viewBox="0 0 1500 740" role="img" aria-label="Каскад трьох ступенів із контрактами та зв'язками підстраховки"></svg></div>
+  <p class="hint int">Tab — перехід між точками з клавіатури; Enter — відкрити чек-лист; Esc — зняти закріплення. Позначки в чек-листі зберігаються лише в цьому браузері; заблоковані — виконано за <code>plan1.md</code>.</p>
+  <p class="hint pubonly">Tab — перехід між точками з клавіатури; Enter — відкрити стан операції; Esc — зняти закріплення.</p>
+  <footer class="int">Дані зібрано з <code>plan1.md</code> (перша ступінь) і <code>Консервація.md</code> (друга й третя). Другу й третю ступені показано як каркас за зразком: їхні операції ще не розроблено, тож точки на них — етапи, а не контракти. Строки відраховують від першого дня школи. Попередня версія з цифрами — <code>Резерв/</code>.</footer>
+  <footer class="pubonly">Схема Ради молодих учених КДПУ оновлюється автоматично в міру виконання плану. Другу й третю ступені показано як каркас: їхні операції ще не розроблено. Строки відраховують від першого дня школи.</footer>
+</main>
+<div id="tip" role="tooltip"></div>
+<script>
+const DATA = {"stages": [{"n": 1, "word": "перший", "name": "Ціль", "ops": ["Ціль і формат", "Розподіл контрактів і резерв"]}, {"n": 2, "word": "другий", "name": "Контакти", "ops": ["Майданчик", "Спікери"]}, {"n": 3, "word": "третій", "name": "Медійна підготовка", "ops": ["Оголошення й форма реєстрації", "Поширення оголошення"]}, {"n": 4, "word": "четвертий", "name": "Збір даних і категорії", "ops": ["Закриття реєстрації й категорії"]}, {"n": 5, "word": "п'ятий", "name": "Захід", "ops": ["Навчальні тези", "Групи, явочні листи, нагадування", "Трансляція", "Модерація", "Фотофіксація", "Оцінювання рецензій"]}, {"n": 6, "word": "шостий", "name": "Підведення підсумків", "ops": ["Подяки й текст підсумку", "Виготовлення сертифікатів", "Розсилка сертифікатів", "Публікація підсумку"]}, {"n": 7, "word": "сьомий", "name": "Результат", "ops": ["Ціль — факт і запрошення рецензентів"]}], "ops": {"Ціль і формат": {"id": "Ціль і формат", "title": "Ціль і формат", "label": "Ціль", "who": "голова", "when": "за шість тижнів до школи", "gives": "затверджені ціль і формат.", "checks": [], "total": 6, "done": 0, "ext": [], "blocks": [{"name": "Підстраховка", "total": 1, "done": 0}, {"name": "Зробити", "total": 5, "done": 0}, {"name": "Повідомлення", "total": 0, "done": 0}]}, "Розподіл контрактів і резерв": {"id": "Розподіл контрактів і резерв", "title": "Розподіл контрактів і резерв", "label": "Розподіл контрактів", "who": "заступник голови", "when": "щойно затверджено ціль", "gives": "аркуш «Контракти», де на кожну операцію є виконавець.", "checks": ["Ціль і формат"], "total": 5, "done": 0, "ext": [], "blocks": [{"name": "Підстраховка", "total": 1, "done": 0}, {"name": "Зробити", "total": 4, "done": 0}, {"name": "Повідомлення", "total": 0, "done": 0}]}, "Майданчик": {"id": "Майданчик", "title": "Майданчик", "label": "Майданчик", "who": "«Майданчик»", "when": "упродовж тижня після затвердження цілі", "gives": "обидва дні школи з аудиторією й посиланням трансляції.", "checks": ["Ціль і формат"], "total": 5, "done": 0, "ext": [], "blocks": [{"name": "Підстраховка", "total": 1, "done": 0}, {"name": "Зробити", "total": 4, "done": 0}, {"name": "Повідомлення", "total": 0, "done": 0}]}, "Спікери": {"id": "Спікери", "title": "Спікери", "label": "Спікери", "who": "«Спікери»", "when": "за п'ять — чотири тижні до школи", "gives": "четверо спікерів підтвердили письмово.", "checks": ["Майданчик"], "total": 6, "done": 0, "ext": [], "blocks": [{"name": "Підстраховка", "total": 1, "done": 0}, {"name": "Зробити", "total": 5, "done": 0}, {"name": "Повідомлення", "total": 0, "done": 0}]}, "Оголошення й форма реєстрації": {"id": "Оголошення й форма реєстрації", "title": "Оголошення й форма реєстрації", "label": "Оголошення", "who": "«Оголошення»", "when": "за місяць до школи", "gives": "текст, афіша й робоча форма, прив'язана до аркуша «Учасники».", "checks": ["Майданчик", "Спікери"], "total": 6, "done": 0, "ext": [], "blocks": [{"name": "Підстраховка", "total": 1, "done": 0}, {"name": "Зробити", "total": 5, "done": 0}, {"name": "Повідомлення", "total": 0, "done": 0}]}, "Поширення оголошення": {"id": "Поширення оголошення", "title": "Поширення оголошення", "label": "Поширення", "who": "«Поширення»", "when": "від чотирьох тижнів до трьох днів до школи", "gives": "оголошення щонайменше в трьох каналах.", "checks": ["Оголошення й форма реєстрації"], "total": 8, "done": 0, "ext": [], "blocks": [{"name": "Підстраховка", "total": 2, "done": 0}, {"name": "Зробити", "total": 6, "done": 0}, {"name": "Повідомлення", "total": 0, "done": 0}]}, "Закриття реєстрації й категорії": {"id": "Закриття реєстрації й категорії", "title": "Закриття реєстрації й категорії", "label": "Реєстрація", "who": "«Реєстрація»", "when": "за три — два дні до школи", "gives": "чистий аркуш «Учасники» з категоріями.", "checks": ["Оголошення й форма реєстрації"], "total": 6, "done": 0, "ext": [], "blocks": [{"name": "Підстраховка", "total": 1, "done": 0}, {"name": "Зробити", "total": 5, "done": 0}, {"name": "Повідомлення", "total": 0, "done": 0}]}, "Навчальні тези": {"id": "Навчальні тези", "title": "Навчальні тези", "label": "Тези", "who": "«Тези»", "when": "за півтора тижня до школи", "gives": "два варіанти тез і ключ дефектів, які підтвердив лектор другого дня.", "checks": ["Ціль і формат"], "total": 5, "done": 0, "ext": ["лектор другого дня"], "blocks": [{"name": "Підстраховка", "total": 1, "done": 0}, {"name": "Зробити", "total": 4, "done": 0}, {"name": "Повідомлення", "total": 0, "done": 0}]}, "Групи, явочні листи, нагадування": {"id": "Групи, явочні листи, нагадування", "title": "Групи, явочні листи, нагадування", "label": "Групи", "who": "«Групи»", "when": "за два дні й напередодні школи", "gives": "групи в таблиці, явочні листи надруковано, нагадування надіслано.", "checks": ["Закриття реєстрації й категорії"], "total": 4, "done": 0, "ext": [], "blocks": [{"name": "Підстраховка", "total": 1, "done": 0}, {"name": "Зробити", "total": 3, "done": 0}, {"name": "Повідомлення", "total": 0, "done": 0}]}, "Трансляція": {"id": "Трансляція", "title": "Трансляція", "label": "Трансляція", "who": "«Трансляція»", "when": "обидва дні школи", "gives": "обидва дні транслювалися; онлайн-учасників відмічено.", "checks": ["Майданчик"], "total": 6, "done": 0, "ext": [], "blocks": [{"name": "Підстраховка", "total": 1, "done": 0}, {"name": "Зробити", "total": 5, "done": 0}, {"name": "Повідомлення", "total": 0, "done": 0}]}, "Модерація": {"id": "Модерація", "title": "Модерація", "label": "Модератор", "who": "«Модератор»", "when": "обидва дні школи", "gives": "відмітки, перше завдання й усі рецензії — у таблиці й теці того самого дня.", "checks": ["Навчальні тези", "Групи, явочні листи, нагадування"], "total": 10, "done": 0, "ext": [], "blocks": [{"name": "Підстраховка", "total": 2, "done": 0}, {"name": "Зробити — обидва дні", "total": 4, "done": 0}, {"name": "Перший день", "total": 1, "done": 0}, {"name": "Другий день", "total": 3, "done": 0}, {"name": "Повідомлення", "total": 0, "done": 0}]}, "Фотофіксація": {"id": "Фотофіксація", "title": "Фотофіксація", "label": "Фото", "who": "«Фото»", "when": "обидва дні школи", "gives": "від трьох до дев'яти кадрів у спільній теці.", "checks": ["Закриття реєстрації й категорії"], "total": 4, "done": 0, "ext": [], "blocks": [{"name": "Підстраховка", "total": 1, "done": 0}, {"name": "Зробити", "total": 3, "done": 0}, {"name": "Повідомлення", "total": 0, "done": 0}]}, "Оцінювання рецензій": {"id": "Оцінювання рецензій", "title": "Оцінювання рецензій", "label": "Оцінювання", "who": "«Оцінювання»", "when": "від другого дня школи до двох днів після неї", "gives": "бал кожної рецензії в таблиці.", "checks": ["Модерація"], "total": 4, "done": 0, "ext": [], "blocks": [{"name": "Підстраховка", "total": 1, "done": 0}, {"name": "Зробити", "total": 3, "done": 0}, {"name": "Повідомлення", "total": 0, "done": 0}]}, "Подяки й текст підсумку": {"id": "Подяки й текст підсумку", "title": "Подяки й текст підсумку", "label": "Підсумок", "who": "«Підсумок»", "when": "перші три дні після школи", "gives": "подяки всім чотирьом спікерам надіслано; текст допису й фото — в чаті.", "checks": ["Модерація", "Фотофіксація"], "total": 5, "done": 0, "ext": [], "blocks": [{"name": "Підстраховка", "total": 2, "done": 0}, {"name": "Зробити", "total": 3, "done": 0}, {"name": "Повідомлення", "total": 0, "done": 0}]}, "Виготовлення сертифікатів": {"id": "Виготовлення сертифікатів", "title": "Виготовлення сертифікатів", "label": "Сертифікати", "who": "«Сертифікати»", "when": "від другого до четвертого дня після школи", "gives": "PDF на кожного зарахованого.", "checks": ["Оцінювання рецензій"], "total": 6, "done": 0, "ext": [], "blocks": [{"name": "Підстраховка", "total": 2, "done": 0}, {"name": "Зробити", "total": 4, "done": 0}, {"name": "Повідомлення", "total": 0, "done": 0}]}, "Розсилка сертифікатів": {"id": "Розсилка сертифікатів", "title": "Розсилка сертифікатів", "label": "Розсилка", "who": "«Розсилка»", "when": "від четвертого до шостого дня після школи", "gives": "кожен зарахований отримав свій сертифікат.", "checks": ["Виготовлення сертифікатів"], "total": 4, "done": 0, "ext": [], "blocks": [{"name": "Підстраховка", "total": 1, "done": 0}, {"name": "Зробити", "total": 3, "done": 0}, {"name": "Повідомлення", "total": 0, "done": 0}]}, "Публікація підсумку": {"id": "Публікація підсумку", "title": "Публікація підсумку", "label": "Публікація", "who": "«Публікація»", "when": "від четвертого до шостого дня після школи", "gives": "допис на сайті й у Facebook.", "checks": ["Подяки й текст підсумку"], "total": 4, "done": 0, "ext": [], "blocks": [{"name": "Підстраховка", "total": 1, "done": 0}, {"name": "Зробити", "total": 3, "done": 0}, {"name": "Повідомлення", "total": 0, "done": 0}]}, "Ціль — факт і запрошення рецензентів": {"id": "Ціль — факт і запрошення рецензентів", "title": "Ціль — факт і запрошення рецензентів", "label": "Ціль — факт", "who": "голова", "when": "на дев'ятий день після школи", "gives": "порівняння, статистика, уроки, список рецензентів для другої ступені.", "checks": ["Розподіл контрактів і резерв", "Майданчик", "Спікери", "Оголошення й форма реєстрації", "Поширення оголошення", "Закриття реєстрації й категорії", "Навчальні тези", "Групи, явочні листи, нагадування", "Трансляція", "Модерація", "Фотофіксація", "Оцінювання рецензій", "Подяки й текст підсумку", "Виготовлення сертифікатів", "Розсилка сертифікатів", "Публікація підсумку"], "total": 7, "done": 0, "ext": [], "blocks": [{"name": "Підстраховка", "total": 2, "done": 0}, {"name": "Зробити", "total": 5, "done": 0}, {"name": "Повідомлення", "total": 0, "done": 0}]}}, "order": ["Ціль і формат", "Розподіл контрактів і резерв", "Майданчик", "Спікери", "Оголошення й форма реєстрації", "Поширення оголошення", "Закриття реєстрації й категорії", "Навчальні тези", "Групи, явочні листи, нагадування", "Трансляція", "Модерація", "Фотофіксація", "Оцінювання рецензій", "Подяки й текст підсумку", "Виготовлення сертифікатів", "Розсилка сертифікатів", "Публікація підсумку", "Ціль — факт і запрошення рецензентів"], "simultaneous": ["Трансляція", "Модерація", "Фотофіксація"], "public": true, "updated": "2026-10-01"};
+const PUB = !!DATA.public;
+document.body.classList.toggle('pub', PUB);
+if (PUB) {
+  document.getElementById('tabName').textContent = 'Стан виконання';
+  document.getElementById('panel').setAttribute('aria-label', 'Стан операції');
+  if (DATA.updated) document.getElementById('updated').textContent = 'оновлено ' + DATA.updated.split('-').reverse().join('.');
+}
+const status = o => o.done === 0 ? 'todo' : o.done === o.total ? 'done' : 'doing';
+const STATUS = { todo: 'не розпочато', doing: 'у роботі', done: 'виконано' };
+const NS = 'http://www.w3.org/2000/svg';
+const svg = document.getElementById('chart');
+const tip = document.getElementById('tip');
+const store = {
+  get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
+  set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} },
+};
+
+// --- числа словами: лише для підсумкового рядка сторінки
+const UNITS_M = ['', 'один', 'два', 'три', 'чотири', "п’ять", 'шість', 'сім', 'вісім', "дев’ять"];
+const UNITS_F = ['', 'одна', 'дві', 'три', 'чотири', "п’ять", 'шість', 'сім', 'вісім', "дев’ять"];
+const TEENS = ['десять', 'одинадцять', 'дванадцять', 'тринадцять', 'чотирнадцять', "п’ятнадцять", 'шістнадцять', 'сімнадцять', 'вісімнадцять', "дев’ятнадцять"];
+const TENS = ['', '', 'двадцять', 'тридцять', 'сорок', "п’ятдесят", 'шістдесят', 'сімдесят', 'вісімдесят', "дев’яносто"];
+function words(n, fem) {
+  const u = fem ? UNITS_F : UNITS_M;
+  if (n === 0) return 'жодного';
+  if (n < 10) return u[n];
+  if (n < 20) return TEENS[n - 10];
+  return (TENS[Math.floor(n / 10)] + ' ' + u[n % 10]).trim();
+}
+function plural(n, one, few, many) {
+  const a = n % 10, b = n % 100;
+  if (a === 1 && b !== 11) return one;
+  if (a >= 2 && a <= 4 && (b < 12 || b > 14)) return few;
+  return many;
+}
+const cap = s => s[0].toUpperCase() + s.slice(1);
+
+const el = (tag, attrs = {}, parent = svg) => {
+  const n = document.createElementNS(NS, tag);
+  for (const [k, v] of Object.entries(attrs)) n.setAttribute(k, v);
+  parent.appendChild(n);
+  return n;
+};
+const txt = (s, attrs, parent) => { const t = el('text', attrs, parent); t.textContent = s; return t; };
+
+// --- геометрія каскаду
+const VW = 1500, LEFT = 40, STEP = 110, LANE_W = VW - LEFT * 2 - STEP * 2;
+const nOps = DATA.order.length;
+const LANES = [
+  { n: 1, y: 215, color: 'var(--lane1)', title: 'Перша ступінь · Школа молодого науковця', sub: `${words(nOps, true)} ${plural(nOps, 'операція', 'операції', 'операцій')} у семи етапах · plan1.md` },
+  { n: 2, y: 485, color: 'var(--lane2)', title: 'Друга ступінь · Студентська конференція у форматі журналу', sub: 'подання, рецензування, публікація в одному збірнику, без виступів · не розроблено' },
+  { n: 3, y: 655, color: 'var(--lane3)', title: 'Третя ступінь · Автономна система', sub: 'третя ланка каскаду: від конференції до шкіл · не розроблено' },
+];
+LANES.forEach((l, i) => { l.x0 = LEFT + i * STEP; l.x1 = l.x0 + LANE_W; });
+
+const nEdges = DATA.order.reduce((s, id) => s + DATA.ops[id].checks.length, 0);
+const nMerged = Object.values(DATA.ops).filter(o => o.merged).length;
+const nSim = DATA.simultaneous.length;
+const nClosed = DATA.order.filter(id => status(DATA.ops[id]) === 'done').length;
+const nDoing = DATA.order.filter(id => status(DATA.ops[id]) === 'doing').length;
+document.getElementById('facts').innerHTML = [
+  (nClosed === 0 ? '<b>Жодної</b> операції ще не виконано' : `<b>${cap(words(nClosed, true))}</b> ${plural(nClosed, 'операцію', 'операції', 'операцій')} виконано`) + (nDoing ? `, <b>${words(nDoing, true)}</b> у роботі` : ''),
+  `<b>${cap(words(nOps, true))}</b> ${plural(nOps, 'операція', 'операції', 'операцій')} першої ступені`,
+  `<b>Сім</b> етапів у кожній ступені`,
+  `<b>${cap(words(nEdges))}</b> ${plural(nEdges, 'зв’язок', 'зв’язки', 'зв’язків')} підстраховки`,
+  ...(PUB ? [] : [`<b>${cap(words(nMerged, true))}</b> ${plural(nMerged, 'злиття', 'злиття', 'злиттів')}: з двадцяти двох операцій стало ${words(nOps, true)}`]),
+  `<b>${nSim === 3 ? 'Троє' : cap(words(nSim))}</b> людей працюють одночасно в дні школи`,
+].map(s => `<li>${s}</li>`).join('');
+
+const defs = el('defs');
+[['arrIn', 'var(--lane1)'], ['arrOut', 'var(--checked-by)'], ['arrEdge', 'var(--edge)'], ['arr2', 'var(--lane2)'], ['arr3', 'var(--lane3)']].forEach(([id, c]) => {
+  const m = el('marker', { id, viewBox: '0 0 10 10', refX: 8, refY: 5, markerWidth: 6, markerHeight: 6, orient: 'auto-start-reverse' }, defs);
+  el('path', { d: 'M0,0 L10,5 L0,10 z', fill: c }, m);
+});
+const gBands = el('g'), gEdges = el('g'), gCascade = el('g'), gDots = el('g');
+const pos = {};
+
+function wrapRows(s, max) {
+  const rows = [];
+  s.split(' ').forEach(w => {
+    if (rows.length && (rows[rows.length - 1] + ' ' + w).length <= max) rows[rows.length - 1] += ' ' + w;
+    else rows.push(w);
+  });
+  return rows;
+}
+
+function drawLane(lane, segments) {
+  const ty = lane.n === 1 ? 36 : lane.y - 52;
+  txt(lane.title, { x: lane.x0, y: ty, 'font-size': 16, 'font-weight': 600, style: `fill:${lane.color}` }, gBands);
+  txt(lane.sub, { x: lane.x0, y: ty + 18, 'font-size': 12.5, style: 'fill:var(--muted)' }, gBands);
+  const gap = 8, total = segments.reduce((s, x) => s + x.weight, 0);
+  const usable = LANE_W - gap * (segments.length - 1);
+  let x = lane.x0;
+  segments.forEach((seg, i) => {
+    const w = usable * seg.weight / total;
+    el('rect', { x, y: lane.y - 18, width: w, height: lane.n === 1 ? 72 : 60, rx: 7, style: `fill:var(${i % 2 ? '--band-b' : '--band-a'})` }, gBands);
+    const ly = lane.y + (lane.n === 1 ? 70 : 58);
+    txt(`Етап ${seg.word}`, { x: x + 8, y: ly, 'font-size': 10.5, class: 'mono', style: 'fill:var(--muted)' }, gBands);
+    if (seg.name) wrapRows(seg.name, Math.max(6, Math.floor((w - 12) / 6.6)))
+      .forEach((r, j) => txt(r, { x: x + 8, y: ly + 15 + j * 14, 'font-size': 12, 'font-weight': 500 }, gBands));
+    seg.x = x; seg.w = w;
+    x += w + gap;
+  });
+  el('line', { x1: lane.x0, y1: lane.y, x2: lane.x1, y2: lane.y, style: `stroke:${lane.color}`, 'stroke-width': 2, opacity: .55 }, gBands);
+  return segments;
+}
+
+const lane1 = LANES[0];
+const segs1 = drawLane(lane1, DATA.stages.map(s => ({ n: s.n, word: s.word, name: s.name, weight: Math.max(s.ops.length, 2), ops: s.ops })));
+let k0 = 0;
+segs1.forEach(seg => seg.ops.forEach((id, k) => {
+  pos[id] = { x: seg.x + seg.w * (k + .5) / seg.ops.length, y: lane1.y, stage: seg, row: (k0++) % 2 };
+}));
+const lanesSegs = {};
+[LANES[1], LANES[2]].forEach(lane => {
+  lanesSegs[lane.n] = drawLane(lane, DATA.stages.map(s => ({ n: s.n, word: s.word, name: '', weight: 1, model: s })));
+});
+
+// одночасні операції
+(() => {
+  const xs = DATA.simultaneous.map(id => pos[id].x), y = lane1.y + 108;
+  const a = Math.min(...xs) - 14, b = Math.max(...xs) + 14;
+  el('path', { d: `M${a},${y - 6} V${y} H${b} V${y - 6}`, fill: 'none', style: 'stroke:var(--checked-by)', 'stroke-width': 1.3 }, gBands);
+  txt('одночасно — три різні людини', { x: (a + b) / 2, y: y + 15, 'text-anchor': 'middle', 'font-size': 11.5, style: 'fill:var(--checked-by)' }, gBands);
+})();
+
+// дуги підстраховки: від перевіреного до того, хто перевіряє
+const edges = [];
+DATA.order.forEach(id => DATA.ops[id].checks.forEach(src => {
+  const a = pos[src], b = pos[id];
+  const dx = b.x - a.x, h = Math.min(150, 22 + Math.abs(dx) * .3);
+  const y = lane1.y - 9;
+  const p = el('path', { d: `M${a.x},${y} C${a.x + dx * .2},${y - h} ${b.x - dx * .2},${y - h} ${b.x},${y}`, class: 'edge' + (DATA.ops[id].checks.length > 3 ? ' wide' : ''), 'marker-end': 'url(#arrEdge)' }, gEdges);
+  edges.push({ from: src, to: id, p });
+}));
+
+// --- рендер карток
+const stageOf = id => DATA.stages.find(s => s.ops.includes(id));
+const checkedBy = id => DATA.order.filter(o => DATA.ops[o].checks.includes(id));
+const q = s => `«${s}»`;
+
+function items(list) {
+  return '<ul>' + list.map(it => `<li>${it.t}${it.sub.length ? '<ul>' + it.sub.map(s => `<li>${s}</li>`).join('') + '</ul>' : ''}${it.quote ? `<blockquote>${it.quote.join('<br>')}</blockquote>` : ''}</li>`).join('') + '</ul>';
+}
+
+function renderOp(id) {
+  const o = DATA.ops[id], st = stageOf(id), by = checkedBy(id);
+  let h = `<span class="pin"></span><div class="kicker">Етап ${st.word}. ${st.name}</div><h3>${o.title}</h3>
+    <dl><dt>Контракт</dt><dd>${o.who}</dd><dt>Строк</dt><dd>${o.when}</dd><dt>Здає</dt><dd>${o.gives}</dd><dt>Стан</dt><dd>${STATUS[status(o)]} · ${o.done} з ${o.total}</dd></dl>`;
+  if (o.merged) h += `<div class="merge"><b>Злито:</b> ${o.merged.was}.<br>${o.merged.why}.</div>`;
+  const chips = [...o.checks.map(q), ...o.ext].join(', ');
+  if (chips) h += `<h4 class="safety">Підстраховка перевіряє</h4><div>${chips}</div>`;
+  if (by.length) h += `<h4>Цю операцію перевіряє</h4><div>${by.map(q).join(', ')}</div>`;
+  h += PUB ? `<h4>Стан</h4><div style="color:var(--muted)">Клік по точці відкриває стан у вкладці вгорі.</div>`
+    : `<h4>Чек-лист</h4><div style="color:var(--muted)">Клік по точці відкриває його у вкладці вгорі.</div>`;
+  return h;
+}
+
+function renderModel(lane, s) {
+  const names = { 2: 'конференції у форматі журналу', 3: 'автономної системи' };
+  return `<div class="kicker">${lane.n === 2 ? 'Друга' : 'Третя'} ступінь · Етап ${s.word}</div><h3>Етап ${s.word} — не розроблено</h3>
+    <p>Операції ${names[lane.n]} ще не сплановано.</p>
+    <p>За зразком першої ступені це етап ${q(s.name)}: там у ньому ${s.ops.length === 1 ? 'операція' : 'операції'} ${s.ops.map(q).join(', ')}. Наступна ступінь бере сім етапів як групи операцій, а назву й склад визначить свій план.</p>`;
+}
+
+// --- каскадні переходи
+function cascadeLink(x1, y1, x2, y2, color, marker, label, info, brief) {
+  const midY = (y1 + y2) / 2;
+  const g = el('g', { class: 'dot', tabindex: 0 }, gCascade);
+  const d = `M${x1},${y1} C${x1},${midY + 40} ${x2},${midY - 40} ${x2},${y2}`;
+  el('path', { d, fill: 'none', style: `stroke:${color}`, 'stroke-width': 2.2, 'stroke-dasharray': '6 4', 'marker-end': `url(#${marker})` }, g);
+  el('path', { d, fill: 'none', stroke: 'transparent', 'stroke-width': 16 }, g);
+  const lx = x1 * .72 + x2 * .28, ly = midY;
+  const w = label.length * 6.6 + 18;
+  el('rect', { x: lx - w / 2, y: ly - 11, width: w, height: 22, rx: 11, style: `fill:var(--card);stroke:${color}` }, g);
+  txt(label, { x: lx, y: ly + 4, 'text-anchor': 'middle', 'font-size': 12, style: `fill:${color}`, 'font-weight': 500 }, g);
+  bindTip(g, () => info, null, () => brief, null);
+}
+const lastOp = DATA.order[DATA.order.length - 1];
+const pLast = pos[lastOp];
+cascadeLink(pLast.x, pLast.y + 104, LANES[1].x0 + 30, LANES[1].y - 66, 'var(--lane2)', 'arr2', 'рецензенти: щонайменше троє, бажано шестеро',
+  `<div class="kicker">Від першої ступені до другої</div><h3>Рецензенти для конференції</h3>
+   <p>Операція ${q(lastOp)} запрошує кожного учасника школи, що має за друге завдання п’ять і більше балів, рецензентом студентської конференції: двоє-троє тез за тією самою рубрикою.</p>
+   <p>Орієнтир із цілі школи: щонайменше троє рецензентів, бажано шестеро.</p>
+   <p>Значок «Від слухача до рецензента» — єдиний між ступенями: показує, чи спрацював каскад від школи до конференції.</p>`,
+  `<span><b>Від першої ступені до другої</b> — ціль: щонайменше троє, бажано шестеро рецензентів конференції з найкращих учасників школи <span class="meta">· ${q(lastOp)}</span></span>`);
+cascadeLink(LANES[1].x1 - 30, LANES[1].y + 80, LANES[2].x0 + 30, LANES[2].y - 66, 'var(--lane3)', 'arr3', 'від конференції до шкіл',
+  `<div class="kicker">Від другої ступені до третьої</div><h3>Третя ланка каскаду</h3>
+   <p>Четверте рішення в Консервація.md: під ланку «від конференції до шкіл» розробляють автономну систему.</p>
+   <p>Що саме передається з другої ступені в третю, ще не визначено.</p>`,
+  `<span><b>Від другої ступені до третьої</b> — від конференції до шкіл; що передається, ще не визначено <span class="meta">· Консервація.md, четверте рішення</span></span>`);
+
+// --- точки
+function dot(x, y, color, opts, render, brief, select) {
+  const g = el('g', { class: 'dot', tabindex: 0, transform: `translate(${x},${y})` }, gDots);
+  el('circle', { r: 15, fill: 'transparent', class: 'halo' }, g);
+  if (opts.merged && !PUB) el('circle', { r: 11.5, fill: 'none', style: `stroke:${color}`, 'stroke-width': 1.4 }, g);
+  if (opts.hollow) el('circle', { r: 7, class: 'core', style: `fill:var(--card);stroke:${color}`, 'stroke-width': 2, 'stroke-dasharray': '3 2' }, g);
+  else if (opts.status === 'todo') el('circle', { r: 7, class: 'core', style: `fill:var(--card);stroke:${color}`, 'stroke-width': 2 }, g);
+  else if (opts.status === 'done') el('circle', { r: 7.5, class: 'core', style: 'fill:var(--done);stroke:var(--card)', 'stroke-width': 2 }, g);
+  else el('circle', { r: 7.5, class: 'core', style: `fill:${color};stroke:var(--card)`, 'stroke-width': 2 }, g);
+  if (opts.status === 'doing') {
+    const a = 2 * Math.PI * opts.share, r = 12;
+    el('path', { d: `M0,${-r} A${r},${r} 0 ${a > Math.PI ? 1 : 0} 1 ${r * Math.sin(a)},${-r * Math.cos(a)}`, fill: 'none', style: 'stroke:var(--done)', 'stroke-width': 2.4, 'stroke-linecap': 'round' }, g);
+  }
+  if (opts.label) txt(opts.label, { y: opts.row ? 42 : 27, 'text-anchor': 'middle', 'font-size': 11.5, 'font-weight': 600 }, g);
+  bindTip(g, render, opts.id, brief, select);
+  if (opts.key) g.dataset.key = opts.key;
+  return g;
+}
+DATA.order.forEach(id => {
+  const p = pos[id], o = DATA.ops[id];
+  dot(p.x, p.y, 'var(--lane1)', { id, key: id, label: o.label, row: p.row, merged: !!o.merged, status: status(o), share: o.done / o.total }, () => renderOp(id),
+    () => `<span><b>${o.title}</b> — ціль: ${o.gives} <span class="meta">· ${o.who} · ${o.when} · ${STATUS[status(o)]}</span></span>`,
+    () => selectPanel(id));
+});
+[LANES[1], LANES[2]].forEach(lane => lanesSegs[lane.n].forEach(seg => {
+  const key = `${lane.n}:${seg.n}`;
+  dot(seg.x + seg.w / 2, lane.y, lane.color, { hollow: true, key }, () => renderModel(lane, seg.model),
+    () => `<span><b>${lane.n === 2 ? 'Друга' : 'Третя'} ступінь · Етап ${seg.word}</b> — не розроблено <span class="meta">· за зразком першої ступені: ${q(seg.model.name)}</span></span>`,
+    () => selectPanel(key, lane, seg));
+}));
+
+// --- вкладка чек-листа
+const pK = document.getElementById('pKicker'), pT = document.getElementById('pTitle'), pM = document.getElementById('pMeta');
+const pB = document.getElementById('pBody'), pP = document.getElementById('pProgress'), pS = document.getElementById('pSelect');
+DATA.stages.forEach(s => {
+  const og = document.createElement('optgroup');
+  og.label = `Етап ${s.word}. ${s.name}`;
+  s.ops.forEach(id => { const o = document.createElement('option'); o.value = id; o.textContent = id; og.appendChild(o); });
+  pS.appendChild(og);
+});
+let current = null;
+const ckey = (id, b, i) => `chk:${id}:${b}:${i}`;
+
+function checkRow(id, bname, i, it) {
+  if (it.done) return `<label class="check done plan"><input type="checkbox" checked disabled><span>${it.t}</span></label>`;
+  const done = store.get(ckey(id, bname, i)) === '1';
+  const sub = it.sub.length ? `<span class="sub">${it.sub.join('<br>')}</span>` : '';
+  const qt = it.quote ? `<blockquote>${it.quote.join('<br>')}</blockquote>` : '';
+  return `<label class="check${done ? ' done' : ''}"><input type="checkbox" data-k="${ckey(id, bname, i)}"${done ? ' checked' : ''}><span>${it.t}${sub}${qt}</span></label>`;
+}
+function updateProgress(id) {
+  const boxes = pB.querySelectorAll('input[type=checkbox]');
+  const n = boxes.length, d = [...boxes].filter(b => b.checked).length;
+  if (!n) { pP.textContent = ''; return; }
+  pP.innerHTML = d === n ? '<b>усе виконано</b>' : d === 0 ? `${words(n)} ${plural(n, 'пункт', 'пункти', 'пунктів')}, ще жодного не позначено`
+    : `позначено <b>${words(d)}</b> · усього ${words(n)}`;
+}
+function selectPanel(key, lane, seg) {
+  current = key;
+  svg.querySelectorAll('.dot.selected').forEach(d => d.classList.remove('selected'));
+  const g = gDots.querySelector(`[data-key="${CSS.escape(key)}"]`); if (g) g.classList.add('selected');
+  if (lane) {
+    pK.textContent = `${lane.n === 2 ? 'Друга' : 'Третя'} ступінь · Етап ${seg.word}`;
+    pT.textContent = `Етап ${seg.word} — не розроблено`; pM.textContent = '';
+    pS.value = ''; pP.textContent = '';
+    pB.innerHTML = `<p class="empty">Чек-листів ще немає: операції ${lane.n === 2 ? 'конференції у форматі журналу' : 'автономної системи'} не сплановано. За зразком першої ступені це етап ${q(seg.model.name)}; його чек-листи див. у ${seg.model.ops.map(q).join(', ')}.</p>`;
+    return;
+  }
+  const o = DATA.ops[key], st = stageOf(key), by = checkedBy(key);
+  pK.textContent = `Перша ступінь · Етап ${st.word}. ${st.name}`;
+  pT.textContent = o.title;
+  pM.innerHTML = `${o.who} · ${o.when} · здає: ${o.gives}`;
+  pS.value = key;
+  if (PUB) {
+    const bar = (d, n) => `<div class="bar"><i style="width:${n ? 100 * d / n : 0}%"></i></div>`;
+    const chips = [...o.checks.map(c => `<span class="chip in">${q(c)}</span>`), ...o.ext.map(c => `<span class="chip in">${c}</span>`)].join('');
+    pB.innerHTML = `<div class="col"><h4>Стан — ${STATUS[status(o)]}</h4><div class="brow"><span>пунктів чек-листа</span><span>${o.done} з ${o.total}</span></div>${bar(o.done, o.total)}`
+      + o.blocks.filter(b => b.total).map(b => `<div class="brow" style="color:var(--muted)"><span>${b.name}</span><span>${b.done} з ${b.total}</span></div>${bar(b.done, b.total)}`).join('') + '</div>'
+      + `<div class="col">${chips ? `<h4 class="safety">Підстраховка перевіряє</h4><div class="chips">${chips}</div>` : ''}`
+      + (by.length ? `<h4>Цю операцію перевіряє</h4><div class="chips">${by.map(c => `<span class="chip out">${q(c)}</span>`).join('')}</div>` : '') + '</div>';
+    pP.innerHTML = status(o) === 'done' ? '<b>виконано</b>' : STATUS[status(o)];
+    store.set('panelOp', key);
+    return;
+  }
+  const cols = [];
+  let work = '';
+  o.blocks.forEach(b => {
+    if (b.name === 'Підстраховка') {
+      const chips = [...o.checks.map(c => `<span class="chip in">${q(c)}</span>`), ...o.ext.map(c => `<span class="chip in">${c}</span>`)].join('');
+      cols.push(`<div class="col"><h4 class="safety">Підстраховка — спершу перевір чуже</h4>${chips ? `<div class="chips">${chips}</div>` : ''}${b.items.map((it, i) => checkRow(key, b.name, i, it)).join('')}</div>`);
+    } else if (b.name === 'Повідомлення') {
+      const msg = (b.quote || []).join('<br>');
+      let extra = '';
+      if (o.merged) extra += `<h4>Злито</h4><div class="empty">${o.merged.was}. ${o.merged.why}.</div>`;
+      if (by.length) extra += `<h4>Цю операцію перевіряє</h4><div class="chips">${by.map(c => `<span class="chip out">${q(c)}</span>`).join('')}</div>`;
+      cols.push(`<div class="col"><h4>Повідомлення — закриває контракт</h4><blockquote class="msg" id="pMsg">${msg}</blockquote><button class="btn" id="pCopy" type="button">Скопіювати повідомлення</button>${extra}</div>`);
+    } else {
+      work += `<h4>${b.name}</h4>${b.items.map((it, i) => checkRow(key, b.name, i, it)).join('')}`;
+    }
+  });
+  cols.splice(1, 0, `<div class="col">${work}</div>`);
+  pB.innerHTML = cols.join('');
+  pB.scrollTop = 0;
+  updateProgress(key);
+  store.set('panelOp', key);
+}
+pB.addEventListener('change', ev => {
+  const b = ev.target; if (!b.dataset.k) return;
+  store.set(b.dataset.k, b.checked ? '1' : '0');
+  b.closest('.check').classList.toggle('done', b.checked);
+  updateProgress(current);
+});
+pB.addEventListener('click', ev => {
+  if (ev.target.id !== 'pCopy') return;
+  const t = document.getElementById('pMsg').innerText;
+  const done = () => { ev.target.textContent = 'Скопійовано'; setTimeout(() => { ev.target.textContent = 'Скопіювати повідомлення'; }, 1500); };
+  try { navigator.clipboard.writeText(t).then(done, () => {}); } catch (e) {}
+});
+pS.addEventListener('change', () => selectPanel(pS.value));
+const step = d => {
+  const i = DATA.order.indexOf(current);
+  selectPanel(DATA.order[i < 0 ? 0 : (i + d + DATA.order.length) % DATA.order.length]);
+};
+document.getElementById('pPrev').addEventListener('click', ev => { ev.stopPropagation(); step(-1); });
+document.getElementById('pNext').addEventListener('click', ev => { ev.stopPropagation(); step(1); });
+document.getElementById('panel').addEventListener('click', ev => ev.stopPropagation());
+
+// --- підказка й підсвічування
+let pinned = null, hideT = null, tipOn = true;
+const goal = document.getElementById('goal'), toggleBtn = document.getElementById('toggleTip');
+const GOAL_PH = '<span class="ph">Наведіть на точку — тут з’явиться ціль пункту.</span>';
+function setTipMode(on) {
+  tipOn = on;
+  toggleBtn.textContent = on ? 'Прибрати контекстне вікно' : 'Повернути контекстне вікно';
+  toggleBtn.setAttribute('aria-pressed', String(!on));
+  goal.classList.toggle('on', !on);
+  goal.innerHTML = GOAL_PH;
+  pinned = null; hide(true);
+  store.set('tipOn', on ? '1' : '0');
+}
+toggleBtn.addEventListener('click', ev => { ev.stopPropagation(); setTipMode(!tipOn); });
+
+function highlight(id, on) {
+  svg.classList.toggle('dim', on && !!id);
+  edges.forEach(e => {
+    const isIn = on && e.to === id, isOut = on && e.from === id;
+    e.p.classList.toggle('in', isIn);
+    e.p.classList.toggle('out', isOut);
+    e.p.setAttribute('marker-end', isIn ? 'url(#arrIn)' : isOut ? 'url(#arrOut)' : 'url(#arrEdge)');
+    if (isIn || isOut) gEdges.appendChild(e.p);
+  });
+  gDots.querySelectorAll('.dot').forEach(d => {
+    const did = d.dataset.id;
+    d.classList.toggle('rel', on && !!did && edges.some(e => (e.to === id && e.from === did) || (e.from === id && e.to === did)));
+  });
+}
+function show(g, html, id, brief) {
+  clearTimeout(hideT);
+  svg.querySelectorAll('.dot.active').forEach(d => d.classList.remove('active'));
+  g.classList.add('active');
+  highlight(id, true);
+  if (!tipOn) { goal.innerHTML = brief(); return; }
+  tip.innerHTML = html;
+  const pin = tip.querySelector('.pin'); if (pin) pin.textContent = pinned === g ? 'закріплено · Esc' : '';
+  const r = g.getBoundingClientRect(), tw = tip.offsetWidth, th = tip.offsetHeight;
+  let x = r.right + 14; if (x + tw > innerWidth - 12) x = r.left - tw - 14; if (x < 12) x = Math.max(12, (innerWidth - tw) / 2);
+  let y = r.top + r.height / 2 - 60; y = Math.max(12, Math.min(y, innerHeight - th - 12));
+  tip.style.left = x + 'px'; tip.style.top = y + 'px';
+  tip.classList.add('on');
+}
+function hide(force) {
+  if (pinned && !force) return;
+  tip.classList.remove('on');
+  if (!tipOn) goal.innerHTML = GOAL_PH;
+  svg.querySelectorAll('.dot.active').forEach(d => d.classList.remove('active'));
+  highlight(null, false);
+}
+function bindTip(g, render, id, brief, select) {
+  if (id) g.dataset.id = id;
+  const open = () => { if (!pinned || pinned === g) show(g, render(), id, brief); };
+  g.addEventListener('mouseenter', open);
+  g.addEventListener('focus', () => { if (pinned && pinned !== g) pinned = null; show(g, render(), id, brief); });
+  g.addEventListener('mouseleave', () => { hideT = setTimeout(() => hide(), 220); });
+  g.addEventListener('blur', () => { if (!pinned) hide(); });
+  g.addEventListener('click', ev => {
+    ev.stopPropagation();
+    pinned = pinned === g ? null : g;
+    if (select) select();
+    show(g, render(), id, brief);
+  });
+  g.addEventListener('keydown', ev => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); g.dispatchEvent(new MouseEvent('click')); } });
+}
+tip.addEventListener('mouseenter', () => clearTimeout(hideT));
+tip.addEventListener('mouseleave', () => { hideT = setTimeout(() => hide(), 220); });
+tip.addEventListener('click', ev => ev.stopPropagation());
+document.addEventListener('click', () => { pinned = null; hide(true); });
+document.addEventListener('keydown', ev => { if (ev.key === 'Escape') { pinned = null; hide(true); } });
+addEventListener('scroll', () => { if (tipOn) { pinned = null; hide(true); } }, { passive: true });
+
+setTipMode(store.get('tipOn') !== '0');
+const savedOp = store.get('panelOp');
+selectPanel(DATA.ops[savedOp] ? savedOp : DATA.order[0]);
+</script>
+</body>
+</html>
